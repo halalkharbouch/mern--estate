@@ -16,9 +16,7 @@ export default function Search() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [listings, setListings] = useState([]);
-
-  
-  
+  const [showMore, setShowMore] = useState(false);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
@@ -53,10 +51,16 @@ export default function Search() {
 
     const fetchListings = async () => {
       setLoading(true);
+      setShowMore(false);
       const searchQuery = urlParams.toString();
       const res = await fetch(`/api/listing/get?${searchQuery}`);
       console.log(res);
       const data = await res.json();
+      if (data.length > 8) {
+        setShowMore(true);
+      } else {
+        setShowMore(false);
+      }
       setListings(data);
       setLoading(false);
     };
@@ -111,6 +115,20 @@ export default function Search() {
     const searchQuery = urlParams.toString();
     navigate(`/search?${searchQuery}`);
   };
+
+  const onShowMoreClick = async () => {
+    const numberOfListings = listings.length;
+    const startIndex = numberOfListings
+    const urlParams = new URLSearchParams(location.search);
+    urlParams.set("startIndex", startIndex);
+    const searchQuery = urlParams.toString();
+    const res = await fetch(`/api/listing/get?${searchQuery}`);
+    const data = await res.json();
+    if (data.length < 9) {
+      setShowMore(false);
+    }
+    setListings([...listings, ...data]);
+  }
 
   return (
     <div className="flex flex-col md:flex-row">
@@ -223,21 +241,30 @@ export default function Search() {
           Listing results:{" "}
         </h1>
         <div className="p-7 flex flex-wrap gap-4">
-            {!loading && listings.length === 0 && (
-                <p className="text-xl text-slate-700">No listing found</p>
-            )    
-            }
+          {!loading && listings.length === 0 && (
+            <p className="text-xl text-slate-700">No listing found</p>
+          )}
 
-            {loading && (
-                <p className="text-xl text-slate-700 text-center w-full">Loading...</p>
-            )
-            }
+          {loading && (
+            <p className="text-xl text-slate-700 text-center w-full">
+              Loading...
+            </p>
+          )}
 
-            {!loading && listings.length > 0 && listings.map((listing) => (
-                <ListingItem key={listing._id} listing={listing}/>
-            ))
-            }
+          {!loading &&
+            listings.length > 0 &&
+            listings.map((listing) => (
+              <ListingItem key={listing._id} listing={listing} />
+            ))}
         </div>
+        {showMore && (
+          <button
+            className="text-green-700 hover:underline p-7 text-center w-full"
+            onClick={onShowMoreClick}
+          >
+            Show more
+          </button>
+        )}
       </div>
     </div>
   );
